@@ -1,46 +1,24 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { API_URL } from '../config/env';
+import Constants from 'expo-constants';
+import * as SecureStore from 'expo-secure-store';
+
+const API_URL = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:4000/api';
 
 class ApiService {
   private static instance: ApiService;
-  private api: AxiosInstance;
+  private axiosInstance: AxiosInstance;
 
   private constructor() {
-    this.api = axios.create({
+    this.axiosInstance = axios.create({
       baseURL: API_URL,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
+      timeout: 10000,
     });
 
-    // Add request interceptor
-    this.api.interceptors.request.use(
-      (config) => {
-        // You can add auth token here when available
-        // const token = await SecureStore.getItemAsync('auth_token');
-        // if (token) {
-        //   config.headers.Authorization = `Bearer ${token}`;
-        // }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Add response interceptor
-    this.api.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        // Handle common errors here (e.g., 401 unauthorized)
-        if (error.response?.status === 401) {
-          // Handle unauthorized error
-          // e.g., redirect to login
-        }
-        return Promise.reject(error);
-      }
-    );
+    this.setupInterceptors();
   }
 
   public static getInstance(): ApiService {
@@ -50,35 +28,61 @@ class ApiService {
     return ApiService.instance;
   }
 
+  private setupInterceptors() {
+    // Request interceptor
+    this.axiosInstance.interceptors.request.use(
+      async (config) => {
+        const token = await SecureStore.getItemAsync('auth_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          console.log('Unauthorized, redirecting to login...');
+          // You can add navigation logic here if needed
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
   public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.api.get<T>(url, config);
+    const response = await this.axiosInstance.get<T>(url, config);
     return response.data;
   }
 
-  public async post<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<T> {
-    const response = await this.api.post<T>(url, data, config);
+  public async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.post<T>(url, data, config);
     return response.data;
   }
 
-  public async put<T>(
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig
-  ): Promise<T> {
-    const response = await this.api.put<T>(url, data, config);
+  public async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.axiosInstance.put<T>(url, data, config);
     return response.data;
   }
 
   public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.api.delete<T>(url, config);
+    const response = await this.axiosInstance.delete<T>(url, config);
     return response.data;
   }
 
-  // Add other HTTP methods as needed
+  public setAuthToken(token: string | null) {
+    if (token) {
+      this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete this.axiosInstance.defaults.headers.common['Authorization'];
+    }
+  }
 }
 
 export const api = ApiService.getInstance();

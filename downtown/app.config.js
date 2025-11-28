@@ -6,6 +6,26 @@ module.exports = {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
+    plugins: [
+      'expo-secure-store',
+      [
+        'expo-build-properties',
+        {
+          android: {
+            compileSdkVersion: 33,
+            targetSdkVersion: 33,
+            buildToolsVersion: '33.0.0'
+          },
+          ios: {
+            useFrameworks: 'static'
+          }
+        }
+      ]
+    ],
+    extra: {
+      API_URL: process.env.API_URL || 'http://localhost:4000/api',
+      enableFlipper: process.env.ENABLE_FLIPPER || 'false',
+    },
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
@@ -26,25 +46,6 @@ module.exports = {
     },
     web: {
       favicon: './assets/favicon.png'
-    },
-    extra: {
-      apiUrl: process.env.API_URL || 'http://localhost:4000/api',
-      enableFlipper: process.env.ENABLE_FLIPPER || 'false',
-    },
-    plugins: [
-      [
-        'expo-build-properties',
-        {
-          android: {
-            compileSdkVersion: 33,
-            targetSdkVersion: 33,
-            buildToolsVersion: '33.0.0'
-          },
-          ios: {
-            useFrameworks: 'static'
-          }
-        }
-      ]
-    ]
+    }
   }
 };
