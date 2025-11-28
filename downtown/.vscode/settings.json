@@ -1,0 +1,25 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.tsserver.disableAutomaticTypeAcquisition": true,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "typescript.tsserver.log": "off",
+  "typescript.tsserver.trace.server": "off",
+  "typescript.tsserver.pluginPaths": [],
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.referencesCodeLens.enabled": false,
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.tsc.autoDetect": "on",
+  "typescript.tsserver.watchOptions": {
+    "watchFile": "dynamicPriorityPolling",
+    "watchDirectory": "dynamicPriorityPolling",
+    "fallbackPolling": "dynamicPriorityPolling"
+  },
+  "typescript.tsserver.experimental.suppressNodeModulesErrors": true,
+  "typescript.tsserver.experimental.suppressNodeModulesWarning": true,
+  "typescript.tsserver.exclude": [
+    "**/node_modules/**"
+  ]
+}
