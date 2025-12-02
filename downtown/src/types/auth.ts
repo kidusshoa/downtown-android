@@ -8,6 +8,11 @@ export interface RegisterFormData extends LoginFormData {
   confirmPassword: string;
 }
 
+export interface ApiResponse<T> {
+  data: T;
+  // You can add other common response fields like status, message, etc.
+}
+
 export interface AuthResponse {
   token: string;
   user: {

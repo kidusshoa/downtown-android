@@ -2,7 +2,8 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:4000/api';
+// Remove the /api suffix since the backend routes don't use it
+const API_URL = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:4000';
 
 class ApiService {
   private static instance: ApiService;

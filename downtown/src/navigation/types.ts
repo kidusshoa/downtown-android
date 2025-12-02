@@ -1,15 +1,23 @@
-export type RootStackParamList = {
-  // Auth Stack
+export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
-  
-  // Main App
-  Main: undefined;
+};
+
+export type AppStackParamList = {
   Home: undefined;
   Profile: undefined;
   Settings: undefined;
-  
-  // Other screens can be added here
+};
+
+export type RootStackParamList = {
+  Splash: undefined;
+  Auth: undefined;
+  App: undefined;
+  // Keep these for backward compatibility
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+  Main: undefined;
   [key: string]: undefined | object;
 };

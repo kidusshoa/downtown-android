@@ -5,8 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { login } from '../../services/authService';
+import { login, setAuthToken } from '../../services/authService';
 import { LoginFormData } from '../../types/auth';
+import * as SecureStore from 'expo-secure-store';
 
 type RootStackParamList = {
   Login: undefined;
@@ -36,14 +37,42 @@ const LoginScreen = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      console.log('Attempting login with:', data);
       setIsLoading(true);
-      const response = await login(data);
-      // Handle successful login
-      // Save token and user data to secure storage
-      // Navigate to main app
-      navigation.navigate('Main');
+      
+      // Make sure we have valid data
+      if (!data.email || !data.password) {
+        throw new Error('Email and password are required');
+      }
+      
+      try {
+        const response = await login(data);
+        console.log('Login response:', response);
+        
+        if (!response || !response.token) {
+          throw new Error('Invalid response from server');
+        }
+        
+        // Save token to secure storage
+        await SecureStore.setItemAsync('auth_token', response.token);
+        console.log('Token saved to secure storage');
+        
+        // Set the auth token in the API client
+        setAuthToken(response.token);
+        
+        // Force a re-render of the RootNavigator to update the auth state
+        // This will be handled by the RootNavigator's auth check
+        
+      } catch (apiError: any) {
+        console.error('API Error:', apiError);
+        const errorMessage = apiError.response?.data?.message || 
+                           apiError.message || 
+                           'An error occurred during login';
+        Alert.alert('Login Failed', errorMessage);
+      }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.response?.data?.message || 'An error occurred');
+      console.error('Login error:', error);
+      Alert.alert('Error', error.message || 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
