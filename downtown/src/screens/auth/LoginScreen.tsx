@@ -19,7 +19,20 @@ type RootStackParamList = {
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
 const loginSchema = yup.object().shape({
-  email: yup.string().email('Invalid email').required('Email is required'),
+  emailOrUsername: yup
+    .string()
+    .required('Email or username is required')
+    .test(
+      'is-email-or-username',
+      'Must be a valid email or username',
+      (value) => {
+        // If it's an email, validate as email, otherwise it's a username
+        if (value?.includes('@')) {
+          return yup.string().email().isValidSync(value);
+        }
+        return true; // For username, just check it's not empty (handled by required)
+      }
+    ),
   password: yup.string().required('Password is required').min(6, 'Password must be at least 6 characters'),
 });
 
@@ -30,49 +43,33 @@ const LoginScreen = () => {
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
     defaultValues: {
-      email: '',
+      emailOrUsername: '',
       password: '',
     },
   });
+
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       console.log('Attempting login with:', data);
       setIsLoading(true);
       
-      // Make sure we have valid data
-      if (!data.email || !data.password) {
-        throw new Error('Email and password are required');
-      }
-      
       try {
         const response = await login(data);
         console.log('Login response:', response);
         
-        if (!response || !response.token) {
-          throw new Error('Invalid response from server');
-        }
+        // Set the auth token
+        await setAuthToken(response.accessToken);
         
-        // Save token to secure storage
-        await SecureStore.setItemAsync('auth_token', response.token);
-        console.log('Token saved to secure storage');
-        
-        // Set the auth token in the API client
-        setAuthToken(response.token);
-        
-        // Force a re-render of the RootNavigator to update the auth state
-        // This will be handled by the RootNavigator's auth check
-        
-      } catch (apiError: any) {
-        console.error('API Error:', apiError);
-        const errorMessage = apiError.response?.data?.message || 
-                           apiError.message || 
-                           'An error occurred during login';
-        Alert.alert('Login Failed', errorMessage);
+        // Navigate to main screen on successful login
+        navigation.navigate('Main');
+      } catch (error: any) {
+        console.error('Login error:', error);
+        Alert.alert('Login Failed', error.response?.data?.message || 'An error occurred during login');
       }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert('Error', error.message || 'An unexpected error occurred');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -80,73 +77,64 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
+      <Text style={styles.title}>Login</Text>
       
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
-                placeholder="Enter your email"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
-            </View>
-          )}
-          name="email"
-        />
+      <Controller
+        control={control}
+        name="emailOrUsername"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <TextInput
+            style={[styles.input, errors.emailOrUsername && styles.inputError]}
+            placeholder="Email or Username"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            onBlur={onBlur}
+            onChangeText={onChange}
+            value={value}
+          />
+        )}
+      />
+      {errors.emailOrUsername && (
+        <Text style={styles.errorText}>{errors.emailOrUsername.message}</Text>
+      )}
 
-        <Controller
-          control={control}
-          render={({ field: { onChange, onBlur, value } }) => (
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
-                placeholder="Enter your password"
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                secureTextEntry
-              />
-              {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
-            </View>
-          )}
-          name="password"
-        />
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <TextInput
+            style={[styles.input, errors.password && styles.inputError]}
+            placeholder="Password"
+            secureTextEntry
+            onBlur={onBlur}
+            onChangeText={onChange}
+            value={value}
+          />
+        )}
+      />
+      {errors.password && (
+        <Text style={styles.errorText}>{errors.password.message}</Text>
+      )}
 
-        <TouchableOpacity
-          style={styles.forgotPasswordButton}
-          onPress={() => navigation.navigate('ForgotPassword')}
-        >
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleSubmit(onSubmit)}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
+      </TouchableOpacity>
+
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <Text style={styles.linkText}>Don't have an account? Register</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleSubmit(onSubmit)}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.loginButtonText}>Log In</Text>
-          )}
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.linkText}>Forgot Password?</Text>
         </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.signUpText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </View>
   );
@@ -155,76 +143,49 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
     padding: 20,
     backgroundColor: '#fff',
-    justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
-    color: '#333',
-  },
-  form: {
-    width: '100%',
-  },
-  inputContainer: {
     marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#333',
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
     padding: 12,
+    borderRadius: 6,
+    marginBottom: 10,
     fontSize: 16,
-    backgroundColor: '#fff',
   },
   inputError: {
     borderColor: 'red',
   },
   errorText: {
     color: 'red',
-    fontSize: 12,
-    marginTop: 4,
+    marginBottom: 10,
   },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: '#007AFF',
-    fontSize: 14,
-  },
-  loginButton: {
+  button: {
     backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
+    padding: 15,
+    borderRadius: 6,
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 10,
   },
-  loginButtonText: {
+  buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#007AFF',
     marginTop: 10,
   },
-  footerText: {
-    color: '#666',
-  },
-  signUpText: {
-    color: '#007AFF',
-    fontWeight: 'bold',
-  },
 });
-
-export default LoginScreen;

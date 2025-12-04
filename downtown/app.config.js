@@ -22,14 +22,18 @@ module.exports = {
         }
       ]
     ],
-    extra: {
-      // For development, use your local IP address (run 'ipconfig' on Windows or 'ifconfig' on macOS/Linux to find it)
-      // Example: 'http://192.168.1.x:4000'
-      API_URL: process.env.EXPO_PUBLIC_PRIVATE_URL || (process.env.NODE_ENV === 'production' 
-        ? 'https://your-production-api.com' 
-        : 'http://localhost:4000'),
-      enableFlipper: process.env.ENABLE_FLIPPER || 'false',
-    },
+   extra: {
+  // For Android emulator
+  API_URL: 'http://192.168.1.16:4000',
+  
+  // For physical device (uncomment and replace with your local IP)
+  // API_URL: 'http://YOUR_LOCAL_IP:4000',
+  
+  // For iOS simulator
+  // API_URL: 'http://localhost:4000',
+  
+  enableFlipper: process.env.ENABLE_FLIPPER || 'false',
+},
     splash: {
       image: null, // We're using a custom splash screen component
       resizeMode: 'contain',

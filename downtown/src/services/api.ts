@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 // Remove the /api suffix since the backend routes don't use it
-const API_URL = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:4000';
+const API_URL = Constants?.expoConfig?.extra?.API_URL || 'http://192.168.1.16:4000';
 
 class ApiService {
   private static instance: ApiService;

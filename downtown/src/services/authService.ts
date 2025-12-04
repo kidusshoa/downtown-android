@@ -3,25 +3,36 @@ import { LoginFormData, RegisterFormData, AuthResponse } from '../types/auth';
 import { api } from './api';
 
 export const login = async (data: LoginFormData): Promise<AuthResponse> => {
-  return api.post<AuthResponse>('/auth/login', data);
+  const response = await api.post<AuthResponse>('/auth/login', {
+    emailOrUsername: data.emailOrUsername,
+    password: data.password
+  });
+  // Store the access token
+  if (response.accessToken) {
+    await SecureStore.setItemAsync('auth_token', response.accessToken);
+  }
+  return response;
 };
 
 export const register = async (data: RegisterFormData): Promise<AuthResponse> => {
-  return api.post<AuthResponse>('/auth/register', data);
+  const response = await api.post<AuthResponse>('/auth/register', {
+    name: data.name,
+    email: data.email,
+    username: data.username,
+    password: data.password
+    // confirmPassword is typically not sent to the backend
+  });
+  return response;
 };
 
 export const logout = async (): Promise<void> => {
-  // Clear the token from the API instance
   api.setAuthToken(null);
-  // Clear the token from secure storage
   await SecureStore.deleteItemAsync('auth_token');
 };
 
-export const setAuthToken = (token: string | null): void => {
+export const setAuthToken = async (token: string | null): Promise<void> => {
   api.setAuthToken(token);
-  
   if (token) {
-    // Also store the token in secure storage for persistence
-    SecureStore.setItemAsync('auth_token', token);
+    await SecureStore.setItemAsync('auth_token', token);
   }
 };
